@@ -22,6 +22,13 @@ SMODS.Atlas {
     py = 95
 }
 
+SMODS.Atlas {
+    key = "Jokers-Augusto-Sousa",
+    path = "Jokers-Augusto-Sousa.png",
+    px = 71,
+    py = 95
+}
+
 -- Mod icon
 
 SMODS.Atlas({
@@ -31,6 +38,7 @@ px = 32,
 py = 32
 })
 
+-- 8/20 nota minima
 SMODS.Joker{
     key = "Peter Diniz",
     loc_txt = {
@@ -42,7 +50,7 @@ SMODS.Joker{
         },
     },
     atlas = "Jokers-Diniz",
-    order = 151,
+    order = 1,
     set = "Joker",
     pos = {x = 0, y = 0},
     rarity = 4,
@@ -79,7 +87,7 @@ SMODS.Joker{
     end
 }
 
--- Spades and Clubs are debuffed, Hearts and Diamonds give 2X mult
+-- Spades and Clubs are debuffed, Hearts and Diamonds give X mult
 SMODS.Joker{
     key = "Luis Paulo Reis",
     loc_txt = {
@@ -91,7 +99,7 @@ SMODS.Joker{
         },
     },
     atlas = "Jokers-Luis-Paulo-Reis",
-    order = 152,
+    order = 2,
     set = "Joker",
     pos = {x = 0, y = 0},
     rarity = 4,
@@ -100,10 +108,11 @@ SMODS.Joker{
     cost_mult = 1.0;
     unlocked = true,
     discovered = true,
-    blueprint_compat = false,
+    blueprint_compat = true,
     eternal_compat = true,
     perishable_compat = true,
     config = {extra = 1.75},
+    effect = "",
     loc_vars = function(self, info_queue, center)
         return {vars = {center.ability.extra}}
     end,
@@ -131,6 +140,69 @@ SMODS.Joker{
                 colour = G.C.RED,
                 card = card
             }
+        end
+    end,
+    in_pool = function(self,wawa,wawa2)
+        return true
+    end
+}
+
+-- Red Seal played Aces, Steel Aces in hand
+SMODS.Joker{
+    key = "Augusto Sousa",
+    loc_txt = {
+        name = "Augusto Sousa",
+        text={
+            "All played {C:attention}Aces{} get",
+            "a {C:red}Red Seal{} when scored.",
+            "All {C:attention}Aces{} held in hand become",
+            "{C:attention}Steel Cards{} after hand is played",
+        },
+    },
+    atlas = "Jokers-Augusto-Sousa",
+    order = 3,
+    set = "Joker",
+    pos = {x = 0, y = 0},
+    rarity = 4,
+    soul_pos = { x = 0, y = 1},
+    cost = 20,
+    cost_mult = 1.0;
+    unlocked = true,
+    discovered = true,
+    blueprint_compat = false,
+    eternal_compat = true,
+    perishable_compat = true,
+    config = {},
+    effect = "Enhance",
+    calculate = function(self,card,context)
+        
+        if not self.debuff and context.cardarea == G.jokers and context.before and not context.blueprint then
+            local aces = {}
+            for k, v in ipairs(context.scoring_hand) do
+                if v:get_id() == 14 then 
+                    aces[#aces+1] = v
+                    v:set_seal('Red')
+                    G.E_MANAGER:add_event(Event({
+                        func = function()
+                            v:juice_up()
+                            return true
+                        end
+                    })) 
+                end
+            end
+            if #aces > 0 then 
+                return {
+                    message = "Magic",
+                    colour = G.C.RED,
+                    card = self
+                }
+            end
+        end 
+        
+        if not self.debuff and context.individual and context.cardarea == G.hand then
+            if context.other_card:get_id() == 14 then
+                context.other_card:set_ability(G.P_CENTERS.m_steel, nil, true)
+            end
         end
     end,
     in_pool = function(self,wawa,wawa2)
