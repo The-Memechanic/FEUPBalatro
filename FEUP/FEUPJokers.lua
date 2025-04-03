@@ -156,7 +156,7 @@ SMODS.Joker{
             "All played {C:attention}Aces{} get",
             "a {C:red}Red Seal{} when scored.",
             "All {C:attention}Aces{} held in hand become",
-            "{C:attention}Steel Cards{} after hand is played",
+            "{C:dark_edition}Polychrome{} after hand is played",
         },
     },
     atlas = "Jokers-Augusto-Sousa",
@@ -201,7 +201,7 @@ SMODS.Joker{
         
         if not self.debuff and context.individual and context.cardarea == G.hand then
             if context.other_card:get_id() == 14 then
-                context.other_card:set_ability(G.P_CENTERS.m_steel, nil, true)
+                context.other_card:set_edition({ polychrome = true }, true)
             end
         end
     end,
