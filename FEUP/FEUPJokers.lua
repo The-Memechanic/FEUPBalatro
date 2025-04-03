@@ -81,20 +81,17 @@ SMODS.Joker{
                 colour = G.C.RED
             }
         end   
-    end,
-    in_pool = function(self,wawa,wawa2)
-        return true
     end
 }
 
--- Spades and Clubs are debuffed, Hearts and Diamonds give X mult
+-- Queens are debuffed, Kings and Jacks give 1.75X mult
 SMODS.Joker{
     key = "Luis Paulo Reis",
     loc_txt = {
         name = "Luis Paulo Reis",
         text={
-            "{C:spades}Spades{} and {C:clubs}Clubs{} are debuffed",
-            "{C:hearts}Hearts{} and {C:diamonds}Diamonds{} give",
+            "{C:attention}Queens{} are debuffed.",
+            "{C:attention}Kings{} and {C:attention}Jacks{} give",
             "{X:mult,C:white} X#1# {} Mult when scored",
         },
     },
@@ -119,14 +116,14 @@ SMODS.Joker{
     update = function(self, card, dt)
 		if G.deck and card.added_to_deck then
 			for i, v in pairs(G.deck.cards) do
-				if v:is_suit("Spades") or v:is_suit("Clubs") then
+				if v:get_id() == 12 then
 					v:set_debuff(true)
 				end
 			end
 		end
 		if G.hand and card.added_to_deck then
 			for i, v in pairs(G.hand.cards) do
-				if v:is_suit("Spades") or v:is_suit("Clubs") then
+				if v:get_id() == 12 then
 					v:set_debuff(true)
 				end
 			end
@@ -134,16 +131,15 @@ SMODS.Joker{
 	end,
     calculate = function(self,card,context)
 
-        if not self.debuff and context.individual and context.cardarea == G.play and (context.other_card:is_suit("Hearts") or context.other_card:is_suit("Diamonds")) then
-            return {
-                x_mult = card.ability.extra,
-                colour = G.C.RED,
-                card = card
-            }
+        if not self.debuff and context.individual and context.cardarea == G.play then
+            if context.other_card:get_id() == 13 or context.other_card:get_id() == 11 then
+                return {
+                    x_mult = card.ability.extra,
+                    colour = G.C.RED,
+                    card = card
+                }
+            end
         end
-    end,
-    in_pool = function(self,wawa,wawa2)
-        return true
     end
 }
 
@@ -153,10 +149,11 @@ SMODS.Joker{
     loc_txt = {
         name = "Augusto Sousa",
         text={
-            "All played {C:attention}Aces{} get",
-            "a {C:red}Red Seal{} when scored.",
-            "All {C:attention}Aces{} held in hand become",
-            "{C:dark_edition}Polychrome{} after hand is played",
+            "If played hand has only 1 card,",
+            "it becomes {C:dark_edition}Polychrome{}.",
+            "This Joker gains {X:mult,C:white}X0.2{} Mult",
+            "for every scoring {C:dark_edition}Polychrome{} card",
+            "{C:inactive}(Currently {X:mult,C:white}X#1#{C:inactive} Mult)",
         },
     },
     atlas = "Jokers-Augusto-Sousa",
@@ -172,41 +169,48 @@ SMODS.Joker{
     blueprint_compat = false,
     eternal_compat = true,
     perishable_compat = true,
-    config = {},
+    config = { extra = {
+        Xmult = 1,
+        Xmult_gain = 0.2
+        }
+    },
     effect = "Enhance",
+    loc_vars = function(self, info_queue, center)
+        return {vars = {center.ability.extra.Xmult}}
+    end,
     calculate = function(self,card,context)
         
+        -- upgrade played card
         if not self.debuff and context.cardarea == G.jokers and context.before and not context.blueprint then
-            local aces = {}
-            for k, v in ipairs(context.scoring_hand) do
-                if v:get_id() == 14 then 
-                    aces[#aces+1] = v
-                    v:set_seal('Red')
-                    G.E_MANAGER:add_event(Event({
-                        func = function()
-                            v:juice_up()
-                            return true
-                        end
-                    })) 
-                end
-            end
-            if #aces > 0 then 
+            if #context.full_hand == 1 then
+                context.full_hand[1]:set_edition({polychrome = true}, true)
                 return {
-                    message = "Magic",
+                    message = "RGB!",
                     colour = G.C.RED,
                     card = self
                 }
             end
-        end 
-        
-        if not self.debuff and context.individual and context.cardarea == G.hand then
-            if context.other_card:get_id() == 14 then
-                context.other_card:set_edition({ polychrome = true }, true)
+        end
+
+        -- upgrade joker value
+        if not self.debuff and context.individual and context.cardarea == G.play then
+            if context.other_card.edition and context.other_card.edition.x_mult then
+                card.ability.extra.Xmult = card.ability.extra.Xmult + card.ability.extra.Xmult_gain
+                return { 
+                    message = localize('k_upgrade_ex') 
+                }
             end
         end
-    end,
-    in_pool = function(self,wawa,wawa2)
-        return true
+
+        -- apply x mult at the end
+        if not self.debuff and context.joker_main then
+            return {  
+                card = card,
+                Xmult_mod = card.ability.extra.Xmult,
+                message = "x" .. card.ability.extra.Xmult,
+                colour = G.C.MULT,
+            }
+        end
     end
 }
 
